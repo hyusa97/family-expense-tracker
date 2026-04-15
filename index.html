@@ -152,6 +152,25 @@
   .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; }
   .amount-pos { color: var(--green); font-weight: 600; }
   .amount-neg { color: var(--red); font-weight: 600; }
+
+  /* Contributor Cards */
+  .contributor-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .contributor-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--card-radius); padding: 16px; }
+  .contributor-card.contrib-less { border-left: 4px solid var(--red); }
+  .contributor-card.contrib-more { border-left: 4px solid var(--green); }
+  .contributor-card.contrib-equal { border-left: 4px solid var(--blue); }
+  .contributor-header { font-family: 'Tiro Devanagari Hindi', serif; font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+  .settlement-section { background: var(--surface2); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; }
+  .settlement-label { color: var(--muted); margin-bottom: 6px; font-weight: 500; font-family: 'Tiro Devanagari Hindi', serif; }
+  .settlement-item { color: var(--text); margin: 4px 0; font-size: 12px; }
+  .settlement-pay { color: var(--red); }
+  .settlement-receive { color: var(--green); }
+  .summary-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--muted); }
+  .summary-row .val { font-weight: 600; color: var(--text); }
+  .ledger-table { font-size: 11px; margin-top: 12px; }
+  .ledger-table table { font-size: 11px; }
+  .ledger-table th { padding: 6px 8px; font-size: 11px; }
+  .ledger-table td { padding: 6px 8px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -206,6 +225,11 @@ const SAMPLE_INVESTMENTS = [];
 
   <!-- Summary cards -->
   <div class="summary-grid">
+    <div class="scard" style="--accent-clr: var(--purple)">
+      <div class="label">कुल आवश्यक राशि</div>
+      <div class="amount" id="totalRequired">₹0</div>
+      <div class="sub">आवश्यक कोष</div>
+    </div>
     <div class="scard" style="--accent-clr: var(--red)">
       <div class="label">कुल खर्च</div>
       <div class="amount" id="totalExpense">₹0</div>
@@ -216,36 +240,23 @@ const SAMPLE_INVESTMENTS = [];
       <div class="amount" id="totalInvestment">₹0</div>
       <div class="sub">सभी योगदानों का योग</div>
     </div>
-    <div class="scard" style="--accent-clr: var(--blue)">
-      <div class="label">प्रति व्यक्ति योगदान हिस्सा</div>
-      <div class="amount" id="perPersonShare">₹0</div>
-      <div class="sub">आवश्यक कोष का बराबर हिस्सा</div>
-    </div>
-    <div class="scard" style="--accent-clr: var(--purple)">
-      <div class="label">खर्च की संख्या</div>
-      <div class="amount" id="expenseCount">0</div>
-      <div class="sub">कुल लेन-देन</div>
-    </div>
   </div>
 
   <!-- Action buttons -->
-  <div class="actions">
+  <div class="actions" style="margin-bottom: 24px;">
     <button class="btn btn-settle" onclick="showSettlement()">✓ हिसाब करें</button>
   </div>
 
-  <!-- Brothers settlement cards -->
-  <div class="brothers-grid" id="brothersGrid"></div>
+  <!-- Contributor Cards -->
+  <div style="margin-top:24px;">
+    <h3 style="font-family:'Tiro Devanagari Hindi',serif;font-size:16px;margin-bottom:16px;color:var(--accent)">📊 संधी का समझ</h3>
+    <div class="contributor-cards-grid" id="contributorCardsContainer"></div>
+  </div>
 
-  <!-- Charts -->
-  <div class="charts-row">
-    <div class="chart-card">
-      <div class="chart-title">योगदान वितरण (Contribution Distribution)</div>
-      <canvas id="investmentPie"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">खर्च वितरण (Expense by Person)</div>
-      <canvas id="expensePie"></canvas>
-    </div>
+  <!-- Contribution Distribution Chart -->
+  <div class="chart-card" style="max-width: 500px; margin-top: 32px;">
+    <div class="chart-title">योगदान वितरण (Contribution Distribution)</div>
+    <canvas id="investmentPie"></canvas>
   </div>
 </div>
 
@@ -402,7 +413,9 @@ const SAMPLE_INVESTMENTS = [];
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
+Chart.register(ChartDataLabels);
 let expenses = [];
 let investments = [];
 let requiredFunds = [];
@@ -643,8 +656,8 @@ function parseCSV(text, type) {
 function renderAll() {
   renderSummary();
   calculateSettlements();
-  renderBrothers();
   renderCharts();
+  renderContributorCards();
   renderExpenseTable();
   renderInvestmentTable();
   renderAdminTables();
@@ -680,8 +693,7 @@ function renderSummary() {
   
   document.getElementById('totalExpense').textContent = fmt(totalExp);
   document.getElementById('totalInvestment').textContent = fmt(totalInv);
-  document.getElementById('perPersonShare').textContent = fmt(sharePerPerson);
-  document.getElementById('expenseCount').textContent = expenses.length;
+  document.getElementById('totalRequired').textContent = fmt(totalReq);
   document.getElementById('expenseTotal2').textContent = `कुल: ${fmt(totalExp)}`;
   document.getElementById('investmentTotal2').textContent = `कुल: ${fmt(totalInv)}`;
 }
@@ -721,17 +733,50 @@ Object.defineProperty(Object.prototype, 'name_match', {
   configurable: true
 });
 
+// ---- CONTRIBUTOR CARDS ----
+function renderContributorCards() {
+  const container = document.getElementById('contributorCardsContainer');
+  container.innerHTML = '';
+  
+  contributorsData.forEach(contributor => {
+    let cardClass = 'contrib-less';
+    if (contributor.contributed > contributor.share) cardClass = 'contrib-more';
+    else if (contributor.contributed === contributor.share) cardClass = 'contrib-equal';
+    
+    let statusHtml = '';
+    if (contributor.settlements.pay.length > 0) {
+      const payments = contributor.settlements.pay.map(p => `₹${p.amount} बकाया`).join('<br>');
+      statusHtml = `<div style="color:var(--red);font-weight:600">${payments}</div>`;
+    } else if (contributor.settlements.receive.length > 0) {
+      const receives = contributor.settlements.receive.map(r => `₹${r.amount} प्राप्त होगा`).join('<br>');
+      statusHtml = `<div style="color:var(--green);font-weight:600">${receives}</div>`;
+    } else {
+      statusHtml = `<div style="color:var(--green);font-weight:600">✅ पूरा हो गया</div>`;
+    }
+    
+    const cardHtml = `
+      <div class="contributor-card ${cardClass}">
+        <div class="contributor-header">👤 ${contributor.name}</div>
+        <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:12px">
+          <div class="summary-row"><span>योगदान:</span><span class="val">₹${contributor.contributed}</span></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:13px">
+          ${statusHtml}
+        </div>
+      </div>
+    `;
+    container.innerHTML += cardHtml;
+  });
+}
+
 // ---- CHARTS ----
 function renderCharts() {
-  ['investmentPie','expensePie'].forEach(id => {
+  ['investmentPie'].forEach(id => {
     if (pieCharts[id]) { pieCharts[id].destroy(); }
   });
 
   const invByBro = CONFIG.BROTHERS.map((name, i) =>
     investments.filter(inv => inv.name_match(inv.invested_by, name)).reduce((s, inv) => s + inv.amount, 0)
-  );
-  const expByBro = CONFIG.BROTHERS.map((name, i) =>
-    expenses.filter(e => e.name_match(e.paid_by, name)).reduce((s, e) => s + e.amount, 0)
   );
 
   const chartDefaults = {
@@ -741,7 +786,17 @@ function renderCharts() {
       maintainAspectRatio: true,
       plugins: {
         legend: { position: 'bottom', labels: { color: '#8a8799', font: { size: 12 }, padding: 12 } },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}` } }
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}` } },
+        datalabels: {
+          color: '#ffffff',
+          font: { size: 11, weight: 'bold' },
+          formatter: (value, context) => {
+            const data = context.chart.data.datasets[0].data;
+            const total = data.reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return percentage + '%';
+          }
+        }
       },
       cutout: '65%'
     }
@@ -749,11 +804,7 @@ function renderCharts() {
 
   pieCharts['investmentPie'] = new Chart(document.getElementById('investmentPie'), {
     ...chartDefaults,
-    data: { labels: CONFIG.BROTHERS.map(n => n.split('-')[0].trim()), datasets: [{ data: invByBro, backgroundColor: CONFIG.BROTHER_COLORS, borderWidth: 0, hoverOffset: 8 }] }
-  });
-  pieCharts['expensePie'] = new Chart(document.getElementById('expensePie'), {
-    ...chartDefaults,
-    data: { labels: CONFIG.BROTHERS.map(n => n.split('-')[0].trim()), datasets: [{ data: expByBro, backgroundColor: CONFIG.BROTHER_COLORS, borderWidth: 0, hoverOffset: 8 }] }
+    data: { labels: CONFIG.BROTHERS.map((n, i) => `${n.split('-')[0].trim()} – ₹${Math.round(invByBro[i])}`), datasets: [{ data: invByBro, backgroundColor: CONFIG.BROTHER_COLORS, borderWidth: 0, hoverOffset: 8 }] }
   });
 }
 
