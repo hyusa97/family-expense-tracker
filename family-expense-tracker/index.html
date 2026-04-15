@@ -227,7 +227,7 @@ const SAMPLE_INVESTMENTS = [];
   <!-- Summary cards -->
   <div class="summary-grid">
     <div class="scard" style="--accent-clr: var(--purple)">
-      <div class="label">कुल आवश्यक राशि</div>
+      <div class="label">कुल अनुमानित खर्च</div>
       <div class="amount" id="totalRequired">₹0</div>
       <div class="sub">आवश्यक कोष</div>
     </div>
@@ -241,16 +241,21 @@ const SAMPLE_INVESTMENTS = [];
       <div class="amount" id="totalInvestment">₹0</div>
       <div class="sub">सभी योगदानों का योग</div>
     </div>
-  </div>
-
-  <!-- Action buttons -->
-  <div class="actions" style="margin-bottom: 24px;">
-    <button class="btn btn-settle" onclick="showSettlement()">✓ हिसाब करें</button>
+    <div class="scard" style="--accent-clr: var(--purple)">
+      <div class="label">कुल आवश्यक राशि</div>
+      <div class="amount" id="remainingRequired">₹0</div>
+      <div class="sub">बाकी आवश्यक राशि</div>
+    </div>
+    <div class="scard" style="--accent-clr: var(--green)">
+      <div class="label">फंड उपलब्ध</div>
+      <div class="amount" id="availableFund">₹0</div>
+      <div class="sub">बचा हुआ पैसा</div>
+    </div>
   </div>
 
   <!-- Contributor Cards -->
   <div style="margin-top:24px;">
-    <h3 style="font-family:'Tiro Devanagari Hindi',serif;font-size:16px;margin-bottom:16px;color:var(--accent)">📊 संधी का समझ</h3>
+    <h3 style="font-family:'Tiro Devanagari Hindi',serif;font-size:16px;margin-bottom:16px;color:var(--accent)">📊 हिसाब</h3>
     <div class="contributor-cards-grid" id="contributorCardsContainer"></div>
   </div>
 
@@ -263,16 +268,16 @@ const SAMPLE_INVESTMENTS = [];
 
 <!-- ===== EXPENSES TAB ===== -->
 <div id="tab-expenses" class="main" style="display:none">
-  <div class="actions" style="justify-content:space-between;align-items:center;">
-    <button class="btn btn-primary" onclick="openForm('expense')">+ खर्च जोड़ें</button>
-    <div style="font-size:13px;color:var(--muted)" id="expenseTotal2"></div>
+  <div class="summary-grid" style="margin-bottom:24px">
+    <div class="scard" style="--accent-clr: var(--accent)">
+      <div class="label">कुल खर्च</div>
+      <div class="amount" id="expenseTotalCard">₹0</div>
+      <div class="sub">सभी खर्चों का योग</div>
+    </div>
   </div>
   <div class="table-card">
     <div class="table-header">
       <div class="table-title">खर्च की सूची</div>
-      <select id="filterPerson" onchange="renderExpenseTable()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;outline:none;">
-        <option value="">सभी</option>
-      </select>
     </div>
     <div style="overflow-x:auto">
     <table>
@@ -281,7 +286,6 @@ const SAMPLE_INVESTMENTS = [];
           <th>दिनांक</th>
           <th>राशि</th>
           <th>श्रेणी</th>
-          <th>किसने दिया</th>
           <th>कारण</th>
           <th>प्रमाण</th>
           <th id="adminExpenseCol" style="display:none">संपादन</th>
@@ -299,33 +303,17 @@ const SAMPLE_INVESTMENTS = [];
 
 <!-- ===== INVESTMENTS TAB ===== -->
 <div id="tab-investments" class="main" style="display:none">
-  <div class="actions" style="justify-content:space-between;align-items:center;">
-    <button class="btn btn-primary" onclick="openForm('investment')">+ योगदान जोड़ें</button>
-    <div style="font-size:13px;color:var(--muted)" id="investmentTotal2"></div>
+  <div class="summary-grid" style="margin-bottom:24px">
+    <div class="scard" style="--accent-clr: var(--green)">
+      <div class="label">कुल योगदान</div>
+      <div class="amount" id="investmentTotalCard">₹0</div>
+      <div class="sub">सभी योगदानों का योग</div>
+    </div>
   </div>
-  <div class="table-card">
-    <div class="table-header">
-      <div class="table-title">योगदान की सूची</div>
-    </div>
-    <div style="overflow-x:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>दिनांक</th>
-          <th>राशि</th>
-          <th>किसने योगदान दिया</th>
-          <th>विवरण</th>
-          <th>प्रमाण</th>
-          <th id="adminInvestCol" style="display:none">संपादन</th>
-        </tr>
-      </thead>
-      <tbody id="investmentTableBody"></tbody>
-    </table>
-    </div>
-    <div id="investmentEmpty" class="empty-state" style="display:none">
-      <div class="icon">🤝</div>
-      <p>कोई योगदान नहीं मिला</p>
-    </div>
+  <div class="brothers-grid" id="yogdaanCardsContainer" style="margin-bottom:24px"></div>
+  <div id="investmentEmpty" class="empty-state" style="display:none">
+    <div class="icon">🤝</div>
+    <p>कोई योगदान नहीं मिला</p>
   </div>
 </div>
 
@@ -433,7 +421,6 @@ let globalMetrics = {
 // ---- INIT ----
 window.onload = () => {
   loadData();
-  populateFilterDropdown();
   checkConfig();
 };
 
@@ -690,8 +677,10 @@ function renderSummary() {
   document.getElementById('totalExpense').textContent = fmt(totalExp);
   document.getElementById('totalInvestment').textContent = fmt(totalInv);
   document.getElementById('totalRequired').textContent = fmt(totalReq);
-  document.getElementById('expenseTotal2').textContent = `कुल: ${fmt(totalExp)}`;
-  document.getElementById('investmentTotal2').textContent = `कुल: ${fmt(totalInv)}`;
+  document.getElementById('expenseTotalCard').textContent = fmt(totalExp);
+  document.getElementById('investmentTotalCard').textContent = fmt(totalInv);
+  document.getElementById('remainingRequired').textContent = fmt(Math.max(0, totalReq - totalExp));
+  document.getElementById('availableFund').textContent = fmt(Math.max(0, totalInv - totalExp));
 }
 
 // ---- BROTHERS ----
@@ -729,35 +718,55 @@ Object.defineProperty(Object.prototype, 'name_match', {
   configurable: true
 });
 
-// ---- CONTRIBUTOR CARDS ----
+// ---- CONTRIBUTOR CARDS (DASHBOARD) ----
 function renderContributorCards() {
   const container = document.getElementById('contributorCardsContainer');
   container.innerHTML = '';
+  const { sharePerPerson } = globalMetrics;
   
-  contributorsData.forEach(contributor => {
-    let cardClass = 'contrib-less';
-    if (contributor.contributed > contributor.share) cardClass = 'contrib-more';
-    else if (contributor.contributed === contributor.share) cardClass = 'contrib-equal';
+  CONFIG.BROTHERS.forEach((name, idx) => {
+    const contributed = investments
+      .filter(inv => inv.name_match(inv.invested_by, name))
+      .reduce((s, inv) => s + inv.amount, 0);
     
+    // Balance calculation: positive means overpaid (should receive), negative means underpaid (should pay)
+    const balance = contributed - sharePerPerson;
+    
+    let cardClass = 'contrib-less';
     let statusHtml = '';
-    if (contributor.settlements.pay.length > 0) {
-      const payments = contributor.settlements.pay.map(p => `₹${p.amount} बकाया`).join('<br>');
-      statusHtml = `<div style="color:var(--red);font-weight:600">${payments}</div>`;
-    } else if (contributor.settlements.receive.length > 0) {
-      const receives = contributor.settlements.receive.map(r => `₹${r.amount} प्राप्त होगा`).join('<br>');
-      statusHtml = `<div style="color:var(--green);font-weight:600">${receives}</div>`;
+    let breakdownLine = '';
+    
+    if (balance > 0) {
+      cardClass = 'contrib-more';
+      statusHtml = `<div style="color:var(--green);font-weight:600">₹${Math.round(balance)} प्राप्त होगा</div>`;
+      breakdownLine = `अधिक दिया: ₹${Math.round(balance)}`;
+    } else if (balance < 0) {
+      cardClass = 'contrib-less';
+      statusHtml = `<div style="color:var(--red);font-weight:600">₹${Math.round(Math.abs(balance))} देना बाकी</div>`;
+      breakdownLine = `बाकी: ₹${Math.round(Math.abs(balance))}`;
     } else {
+      cardClass = 'contrib-equal';
       statusHtml = `<div style="color:var(--green);font-weight:600">✅ पूरा हो गया</div>`;
+      breakdownLine = `पूरा बराबर`;
     }
+    
+    const explanationHtml = `
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.6;font-family:'Tiro Devanagari Hindi',serif;">
+        <div>देना था: ₹${Math.round(sharePerPerson)}</div>
+        <div>दिया: ₹${Math.round(contributed)}</div>
+        <div style="color:var(--text);font-weight:500;">${breakdownLine}</div>
+      </div>
+    `;
     
     const cardHtml = `
       <div class="contributor-card ${cardClass}">
-        <div class="contributor-header">👤 ${contributor.name}</div>
+        <div class="contributor-header">👤 ${name}</div>
         <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:12px">
-          <div class="summary-row"><span>योगदान:</span><span class="val">₹${contributor.contributed}</span></div>
+          <div class="summary-row"><span>योगदान:</span><span class="val">₹${Math.round(contributed)}</span></div>
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:13px">
           ${statusHtml}
+          ${explanationHtml}
         </div>
       </div>
     `;
@@ -805,27 +814,21 @@ function renderCharts() {
 }
 
 // ---- EXPENSE TABLE ----
-function populateFilterDropdown() {
-  const sel = document.getElementById('filterPerson');
-  CONFIG.BROTHERS.forEach(name => {
-    sel.innerHTML += `<option value="${name}">${name}</option>`;
-  });
-}
-
 function renderExpenseTable() {
-  const filter = document.getElementById('filterPerson').value;
-  const filtered = filter ? expenses.filter(e => e.name_match(e.paid_by, filter)) : expenses;
   const tbody = document.getElementById('expenseTableBody');
   tbody.innerHTML = '';
-  document.getElementById('expenseEmpty').style.display = filtered.length ? 'none' : 'block';
-  [...filtered].sort((a,b) => b.date.localeCompare(a.date)).forEach((e, i) => {
+  document.getElementById('expenseEmpty').style.display = expenses.length ? 'none' : 'block';
+  
+  // Sort by date descending (latest first)
+  const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  sortedExpenses.forEach((e, i) => {
     const categoryColors = { 'निर्माण सामग्री': '#e05c2a', 'यातायात': '#3498db', 'मजदूरी': '#f0a500', 'उपकरण': '#9b59b6', 'अन्य': '#8a8799' };
     const cat = e.category || 'अन्य';
     tbody.innerHTML += `<tr>
       <td>${formatDate(e.date)}</td>
       <td><strong class="amount-neg">${fmt(e.amount)}</strong></td>
       <td><span class="badge" style="background:${(categoryColors[cat]||'#8a8799')}22;color:${categoryColors[cat]||'#8a8799'}">${cat}</span></td>
-      <td>${e.paid_by}</td>
       <td>${e.reason}</td>
       <td>${e.proof ? `<a href="${e.proof}" class="proof-link" target="_blank">📎 देखें</a>` : '<span style="color:var(--muted);font-size:12px">-</span>'}</td>
       ${isAdmin ? `<td><button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="editItem('expense',${i})">✏️</button></td>` : ''}
@@ -833,23 +836,101 @@ function renderExpenseTable() {
   });
 }
 
-// ---- INVESTMENT TABLE ----
+// ---- INVESTMENT TABLE / YOGDAAN CONTRIBUTOR CARDS ----
 function renderInvestmentTable() {
-  const tbody = document.getElementById('investmentTableBody');
-  tbody.innerHTML = '';
-  document.getElementById('investmentEmpty').style.display = investments.length ? 'none' : 'block';
-  [...investments].sort((a,b) => b.date.localeCompare(a.date)).forEach((inv, i) => {
-    const bIdx = CONFIG.BROTHERS.findIndex(name => inv.name_match(inv.invested_by, name));
-    const color = CONFIG.BROTHER_COLORS[bIdx] || '#8a8799';
-    tbody.innerHTML += `<tr>
-      <td>${formatDate(inv.date)}</td>
-      <td><strong class="amount-pos">${fmt(inv.amount)}</strong></td>
-      <td><span style="color:${color};font-weight:600">${inv.invested_by}</span></td>
-      <td>${inv.notes}</td>
-      <td>${inv.proof ? `<a href="${inv.proof}" class="proof-link" target="_blank">📎 देखें</a>` : '<span style="color:var(--muted);font-size:12px">-</span>'}</td>
-      ${isAdmin ? `<td><button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="editItem('investment',${i})">✏️</button></td>` : ''}
-    </tr>`;
+  const container = document.getElementById('yogdaanCardsContainer');
+  container.innerHTML = '';
+  const { sharePerPerson, totalRequired } = globalMetrics;
+  
+  CONFIG.BROTHERS.forEach((name, idx) => {
+    const contributed = investments
+      .filter(inv => inv.name_match(inv.invested_by, name))
+      .reduce((s, inv) => s + inv.amount, 0);
+    
+    const remaining = sharePerPerson - contributed;
+    const color = CONFIG.BROTHER_COLORS[idx];
+    
+    // Get contributions for this person, sorted by date DESC
+    const personInvestments = [...investments]
+      .filter(inv => inv.name_match(inv.invested_by, name))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Determine status
+    let statusHtml = '';
+    let statusColor = '';
+    if (remaining > 0) {
+      statusHtml = `₹${Math.round(remaining)} देना बाकी →`;
+      statusColor = 'var(--red)';
+    } else if (remaining < 0) {
+      statusHtml = `← ₹${Math.round(Math.abs(remaining))} मिलेगा`;
+      statusColor = 'var(--green)';
+    } else {
+      statusHtml = '✅ पूरा हो गया';
+      statusColor = 'var(--green)';
+    }
+    
+    // Build ledger table
+    let ledgerHtml = '';
+    if (personInvestments.length > 0) {
+      ledgerHtml = `
+        <div style="margin-top:12px;font-size:11px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left;padding:6px 0;color:var(--muted);font-size:10px;">दिनांक</th>
+                <th style="text-align:right;padding:6px 0;color:var(--muted);font-size:10px;">राशि</th>
+                <th style="text-align:center;padding:6px 0;color:var(--muted);font-size:10px;">प्रमाण</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      personInvestments.forEach(inv => {
+        ledgerHtml += `
+              <tr style="border-bottom:1px solid rgba(42,42,56,0.4);">
+                <td style="padding:6px 0;font-size:11px;color:var(--text);">${formatDate(inv.date)}</td>
+                <td style="text-align:right;padding:6px 0;font-weight:600;color:var(--green);font-size:11px;">₹${Math.round(inv.amount)}</td>
+                <td style="text-align:center;padding:6px 0;font-size:11px;">${inv.proof ? `<a href="${inv.proof}" class="proof-link" target="_blank" style="font-size:10px;">📎</a>` : '-'}</td>
+              </tr>
+        `;
+      });
+      
+      ledgerHtml += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+    
+    const cardHtml = `
+      <div class="bcard" style="border-left:4px solid ${color};display:flex;flex-direction:column;height:100%;">
+        <div class="name" style="margin-bottom:14px;">
+          <div class="avatar" style="background:${color}">${CONFIG.BROTHER_INITIALS[idx]}</div>
+          <span style="font-weight:600;">${name}</span>
+        </div>
+        
+        <div class="row" style="margin-bottom:10px;">
+          <span class="lbl">योगदान</span>
+          <span class="val" style="color:var(--green);font-weight:600;">₹${Math.round(contributed)}</span>
+        </div>
+        
+        <div class="row" style="margin-bottom:10px;">
+          <span class="lbl">देना था</span>
+          <span class="val">₹${Math.round(sharePerPerson)}</span>
+        </div>
+        
+        <div style="margin-bottom:12px;padding:8px 10px;background:rgba(${remaining > 0 ? '231,76,60' : '46,204,113'},0.08);border:1px solid rgba(${remaining > 0 ? '231,76,60' : '46,204,113'},0.2);border-radius:6px;font-size:12px;color:${statusColor};font-weight:600;font-family:'Tiro Devanagari Hindi',serif;text-align:center;">
+          ${statusHtml}
+        </div>
+        
+        ${ledgerHtml}
+      </div>
+    `;
+    
+    container.innerHTML += cardHtml;
   });
+  
+  document.getElementById('investmentEmpty').style.display = investments.length ? 'none' : 'block';
 }
 
 // ---- ADMIN TABLES ----
