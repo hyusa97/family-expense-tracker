@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>परिवार हिसाब</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #17171e;
+    --surface2: #1e1e28;
+    --border: #2a2a38;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --blue: #3498db;
+    --purple: #9b59b6;
+    --text: #f0ede8;
+    --muted: #8a8799;
+    --card-radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Tiro Devanagari Hindi', serif; font-size: 20px; color: var(--accent); letter-spacing: 0.5px; }
+  .logo span { color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; margin-left: 8px; }
+  .admin-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all .2s; }
+  .admin-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .admin-badge { background: var(--accent); color: #000; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; padding: 16px 20px 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 18px; border-radius: 10px 10px 0 0; cursor: pointer; font-size: 14px; color: var(--muted); border: 1px solid transparent; border-bottom: none; transition: all .2s; font-family: 'Tiro Devanagari Hindi', serif; }
+  .tab.active { background: var(--bg); color: var(--accent); border-color: var(--border); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* Main content */
+  .main { padding: 24px 20px; max-width: 1100px; margin: 0 auto; }
+
+  /* Summary cards */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .scard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scard::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-clr, var(--accent)); }
+  .scard .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: 'Tiro Devanagari Hindi', serif; }
+  .scard .amount { font-size: 26px; font-weight: 600; color: var(--text); }
+  .scard .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Brothers grid */
+  .brothers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .bcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 18px;
+  }
+  .bcard .name { font-family: 'Tiro Devanagari Hindi', serif; font-size: 16px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #000; flex-shrink: 0; }
+  .bcard .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .bcard .row .lbl { color: var(--muted); }
+  .bcard .row .val { font-weight: 500; }
+  .bcard .settle-status { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 13px; text-align: center; font-weight: 500; }
+  .owes { background: rgba(231,76,60,0.15); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+  .gets { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+  .settled { background: rgba(138,135,153,0.15); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Action buttons */
+  .actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .btn {
+    padding: 12px 22px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14px; font-family: 'Tiro Devanagari Hindi', serif;
+    font-weight: 500; transition: all .2s; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #ffb820; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-settle { background: linear-gradient(135deg, var(--green), #27ae60); color: #fff; }
+  .btn-settle:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(46,204,113,0.3); }
+  .btn-danger { background: rgba(231,76,60,0.15); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+
+  /* Chart area */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width: 640px) { .charts-row { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 20px; }
+  .chart-title { font-size: 14px; color: var(--muted); margin-bottom: 16px; font-family: 'Tiro Devanagari Hindi', serif; }
+  canvas { max-height: 220px; }
+
+  /* Tables */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius); overflow: hidden; margin-bottom: 16px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .table-title { font-family: 'Tiro Devanagari Hindi', serif; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); font-family: 'Tiro Devanagari Hindi', serif; }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(42,42,56,0.6); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .proof-link { color: var(--blue); text-decoration: none; font-size: 12px; }
+  .proof-link:hover { text-decoration: underline; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-family: 'Tiro Devanagari Hindi', serif; font-size: 15px; }
+
+  /* Admin login modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 32px; width: 340px; }
+  .modal h3 { font-family: 'Tiro Devanagari Hindi', serif; font-size: 20px; margin-bottom: 20px; color: var(--accent); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-family: 'Tiro Devanagari Hindi', serif; }
+  .field input, .field select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  /* Edit modal */
+  .edit-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .edit-modal h3 { font-family: 'Tiro Devanagari Hindi', serif; font-size: 18px; margin-bottom: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Config banner */
+  .config-banner { background: rgba(240,165,0,0.1); border: 1px solid rgba(240,165,0,0.3); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: var(--accent); }
+  .config-banner code { background: rgba(240,165,0,0.15); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* Settle history */
+  .settle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .settle-item:last-child { border-bottom: none; }
+
+  .refreshing { opacity: 0.5; pointer-events: none; }
+  .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: all .2s; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; }
+  .amount-pos { color: var(--green); font-weight: 600; }
+  .amount-neg { color: var(--red); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIG — Replace these values with your actual URLs/IDs
+     ============================================================ -->
+<script>
+const CONFIG = {
+  EXPENSE_CSV_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=खर्च",
+  INVESTMENT_CSV_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=निवेश",
+  REQUIRED_FUND_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=Required_Fund",
+  ADMIN_PASSWORD: "hisaab123",
+
+  EXPENSE_FORM_URL: "...",
+  INVESTMENT_FORM_URL: "...",
+
+  BROTHERS: ["Ajay Kumar", "Ranjay Kumar", "Pawan Kumar", "Rishi Kumar"],
+  BROTHER_COLORS: ["#f0a500", "#e05c2a", "#3498db", "#9b59b6"],
+  BROTHER_INITIALS: ["A", "R", "P", "R"],
+
+  SPLIT_WAYS: 4,
+};
+
+// ---- SAMPLE DATA (shown when CSV URLs are not configured) ----
+const SAMPLE_EXPENSES = [];
+const SAMPLE_INVESTMENTS = [];
+</script>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">परिवार हिसाब <span>Family Expense Tracker</span></div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <button class="refresh-btn" onclick="loadData()">↻ रिफ्रेश</button>
+    <button class="admin-btn" id="adminHeaderBtn" onclick="showAdminLogin()">🔐 Admin</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">📊 डैशबोर्ड</div>
+  <div class="tab" onclick="switchTab('expenses')">💸 खर्च</div>
+  <div class="tab" onclick="switchTab('investments')">� योगदान</div>
+  <div class="tab" id="adminTab" style="display:none" onclick="switchTab('admin')">⚙️ Admin</div>
+</div>
+
+<!-- ===== DASHBOARD TAB ===== -->
+<div id="tab-dashboard" class="main">
+  <div id="configBanner" class="config-banner" style="display:none">
+    ⚠️ <strong>सेटअप बाकी है:</strong> HTML फ़ाइल में <code>CONFIG</code> ऑब्जेक्ट में अपने Google Form और Sheet URLs डालें। अभी sample data दिखाया जा रहा है।
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid">
+    <div class="scard" style="--accent-clr: var(--red)">
+      <div class="label">कुल खर्च</div>
+      <div class="amount" id="totalExpense">₹0</div>
+      <div class="sub">सभी खर्चों का योग</div>
+    </div>
+    <div class="scard" style="--accent-clr: var(--green)">
+      <div class="label">कुल योगदान</div>
+      <div class="amount" id="totalInvestment">₹0</div>
+      <div class="sub">सभी योगदानों का योग</div>
+    </div>
+    <div class="scard" style="--accent-clr: var(--blue)">
+      <div class="label">प्रति व्यक्ति योगदान हिस्सा</div>
+      <div class="amount" id="perPersonShare">₹0</div>
+      <div class="sub">आवश्यक कोष का बराबर हिस्सा</div>
+    </div>
+    <div class="scard" style="--accent-clr: var(--purple)">
+      <div class="label">खर्च की संख्या</div>
+      <div class="amount" id="expenseCount">0</div>
+      <div class="sub">कुल लेन-देन</div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="actions">
+    <button class="btn btn-settle" onclick="showSettlement()">✓ हिसाब करें</button>
+  </div>
+
+  <!-- Brothers settlement cards -->
+  <div class="brothers-grid" id="brothersGrid"></div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">योगदान वितरण (Contribution Distribution)</div>
+      <canvas id="investmentPie"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">खर्च वितरण (Expense by Person)</div>
+      <canvas id="expensePie"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXPENSES TAB ===== -->
+<div id="tab-expenses" class="main" style="display:none">
+  <div class="actions" style="justify-content:space-between;align-items:center;">
+    <button class="btn btn-primary" onclick="openForm('expense')">+ खर्च जोड़ें</button>
+    <div style="font-size:13px;color:var(--muted)" id="expenseTotal2"></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">खर्च की सूची</div>
+      <select id="filterPerson" onchange="renderExpenseTable()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;outline:none;">
+        <option value="">सभी</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>दिनांक</th>
+          <th>राशि</th>
+          <th>श्रेणी</th>
+          <th>किसने दिया</th>
+          <th>कारण</th>
+          <th>प्रमाण</th>
+          <th id="adminExpenseCol" style="display:none">संपादन</th>
+        </tr>
+      </thead>
+      <tbody id="expenseTableBody"></tbody>
+    </table>
+    </div>
+    <div id="expenseEmpty" class="empty-state" style="display:none">
+      <div class="icon">📋</div>
+      <p>कोई खर्च नहीं मिला</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INVESTMENTS TAB ===== -->
+<div id="tab-investments" class="main" style="display:none">
+  <div class="actions" style="justify-content:space-between;align-items:center;">
+    <button class="btn btn-primary" onclick="openForm('investment')">+ योगदान जोड़ें</button>
+    <div style="font-size:13px;color:var(--muted)" id="investmentTotal2"></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">योगदान की सूची</div>
+    </div>
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>दिनांक</th>
+          <th>राशि</th>
+          <th>किसने योगदान दिया</th>
+          <th>विवरण</th>
+          <th>प्रमाण</th>
+          <th id="adminInvestCol" style="display:none">संपादन</th>
+        </tr>
+      </thead>
+      <tbody id="investmentTableBody"></tbody>
+    </table>
+    </div>
+    <div id="investmentEmpty" class="empty-state" style="display:none">
+      <div class="icon">🤝</div>
+      <p>कोई योगदान नहीं मिला</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN TAB ===== -->
+<div id="tab-admin" class="main" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h2 style="font-family:'Tiro Devanagari Hindi',serif;font-size:20px;color:var(--accent)">⚙️ Admin Panel</h2>
+    <button class="btn btn-danger" onclick="logout()">लॉगआउट</button>
+  </div>
+
+  <!-- Data Addition Section -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:20px;margin-bottom:24px;">
+    <div style="font-family:'Tiro Devanagari Hindi',serif;font-size:16px;font-weight:500;color:var(--accent);margin-bottom:16px;">➕ डेटा जोड़ें</div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="openForm('expense')">+ खर्च जोड़ें</button>
+      <button class="btn btn-secondary" onclick="openForm('investment')">+ योगदान जोड़ें</button>
+    </div>
+  </div>
+
+  <div class="config-banner">
+    <strong>Config URLs</strong><br><br>
+    खर्च Form URL: <code id="showExpenseForm"></code><br>
+    निवेश Form URL: <code id="showInvestForm"></code><br>
+    खर्च CSV URL: <code id="showExpenseCSV"></code><br>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="table-card" style="overflow:hidden;">
+      <div class="table-header"><div class="table-title">हाल के खर्च (Admin)</div></div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>दिनांक</th><th>राशि</th><th>व्यक्ति</th><th>कार्य</th></tr></thead>
+        <tbody id="adminExpenseList"></tbody>
+      </table>
+      </div>
+    </div>
+    <div class="table-card" style="overflow:hidden;">
+      <div class="table-header"><div class="table-title">हाल के योगदान (Admin)</div></div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>दिनांक</th><th>राशि</th><th>व्यक्ति</th><th>कार्य</th></tr></thead>
+        <tbody id="adminInvestList"></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN LOGIN MODAL ===== -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>🔐 Admin लॉगिन</h3>
+    <div class="field">
+      <label>पासवर्ड</label>
+      <input type="password" id="adminPass" placeholder="पासवर्ड दर्ज करें" onkeypress="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div id="loginError" style="color:var(--red);font-size:13px;display:none;margin-top:8px;">❌ गलत पासवर्ड</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="doLogin()">लॉगिन</button>
+      <button class="btn btn-secondary" onclick="closeModal('adminModal')">रद्द करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTLEMENT MODAL ===== -->
+<div class="modal-overlay" id="settleModal">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <h3>✅ हिसाब-किताब</h3>
+    <div id="settleContent" style="margin-top:8px;"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-settle" onclick="markSettled()">✓ सेटलमेंट दर्ज करें</button>
+      <button class="btn btn-secondary" onclick="closeModal('settleModal')">बंद करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div class="modal-overlay" id="editModal">
+  <div class="edit-modal">
+    <h3 id="editModalTitle">संपादन</h3>
+    <div id="editFormContent"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 सहेजें (Google Sheet में मैन्युअल करें)</button>
+      <button class="btn btn-secondary" onclick="closeModal('editModal')">रद्द करें</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let expenses = [];
+let investments = [];
+let requiredFunds = [];
+let contributorsData = [];
+let isAdmin = false;
+let currentTab = 'dashboard';
+let pieCharts = {};
+let editingItem = null;
+let globalMetrics = {
+  totalExpense: 0,
+  totalContributed: 0,
+  totalRequired: 0,
+  sharePerPerson: 0,
+  usedAmount: 0,
+  actualRequired: 0,
+  balanceLalbihari: 0
+};
+
+// ---- INIT ----
+window.onload = () => {
+  loadData();
+  populateFilterDropdown();
+  checkConfig();
+};
+
+function checkConfig() {
+  const unconfigured = CONFIG.EXPENSE_CSV_URL === "YOUR_EXPENSE_SHEET_CSV_URL";
+  document.getElementById('configBanner').style.display = unconfigured ? 'block' : 'none';
+  document.getElementById('showExpenseForm').textContent = CONFIG.EXPENSE_FORM_URL;
+  document.getElementById('showInvestForm').textContent = CONFIG.INVESTMENT_FORM_URL;
+  document.getElementById('showExpenseCSV').textContent = CONFIG.EXPENSE_CSV_URL;
+}
+
+async function loadData() {
+  try {
+    const [expRes, invRes, reqRes] = await Promise.all([
+      fetch(CONFIG.EXPENSE_CSV_URL),
+      fetch(CONFIG.INVESTMENT_CSV_URL),
+      fetch(CONFIG.REQUIRED_FUND_URL).catch(e => ({ ok: false }))
+    ]);
+
+    const expData = await expRes.json();
+    const invData = await invRes.json();
+    const reqData = reqRes.ok ? await reqRes.json() : [];
+
+    expenses = parseSheetDB(expData, "expense");
+    investments = parseSheetDB(invData, "investment");
+    requiredFunds = parseRequiredFund(reqData);
+
+    console.log("Required Funds:", requiredFunds);
+    const totalRequiredFund = requiredFunds.reduce((s, r) => s + r.amount, 0);
+    console.log("Total Required Fund:", totalRequiredFund);
+
+  } catch (e) {
+    console.error("Error loading data:", e);
+  }
+
+  renderAll();
+}
+
+function parseSheetDB(data, type) {
+  return data.map(row => {
+
+    if (type === "expense") {
+      return {
+        date: row["DATE"] || row["Timestamp"],
+        amount: parseFloat(row["धन राशि (Amount)"]) || 0,
+        category: "अन्य",
+        paid_by: row["द्वारा भुगतान किया गया (Paid By)"] || "",
+        reason: row["कारण  (Reason Of Expense)"] || "",
+        proof: row["Proof (if any)"] || ""
+      };
+    } else if (type === "investment") {
+      return {
+        date: row["DATE"] || row["Timestamp"],
+        amount: parseFloat(row["धन राशि  (Amount)"]) || 0,
+        invested_by: row["द्वारा निवेश किया गया  (Paid By)"] || "",
+        notes: row["Any comments"] || "",
+        proof: row["Proof (if any)"] || "",
+        given_to: row["को दिया गया  (Given To)"] || ""
+      };
+    }
+
+  }).filter(r => r.amount > 0);
+}
+
+function parseRequiredFund(data) {
+  return data.map(row => ({
+    amount: parseFloat(row["Amount"]) || 0,
+    date: row["DATE"] || row["Timestamp"],
+    reason: row["Reason"] || ""
+  })).filter(r => r.amount > 0);
+}
+
+function calculateSettlements() {
+  const totalReq = requiredFunds.reduce((s, r) => s + r.amount, 0);
+  const totalInv = investments.reduce((s, i) => s + i.amount, 0);
+  const actualRequiredFund = totalReq - totalInv;
+  const share = totalReq > 0 ? totalReq / CONFIG.SPLIT_WAYS : 0;
+  
+  contributorsData = CONFIG.BROTHERS.map(name => {
+    const contributed = investments
+      .filter(inv => inv.name_match(inv.invested_by, name))
+      .reduce((s, inv) => s + inv.amount, 0);
+    
+    const balance = contributed - share;
+    const remaining = share - contributed;
+    
+    return {
+      name,
+      contributed: Math.round(contributed),
+      share: Math.round(share),
+      balance: Math.round(balance),
+      remaining: Math.round(remaining),
+      settlements: {
+        pay: [],
+        receive: []
+      }
+    };
+  });
+  
+  // CASE A: Need more funds (actualRequiredFund > 0)
+  if (actualRequiredFund > 0) {
+    contributorsData.forEach(contributor => {
+      if (contributor.remaining > 0) {
+        contributor.settlements.pay.push({
+          to: "Lalbihari Ram",
+          amount: contributor.remaining
+        });
+      }
+    });
+  } 
+  // CASE B: Have enough/excess funds (actualRequiredFund <= 0)
+  else if (actualRequiredFund <= 0) {
+    // Create working copies for settlement calculation
+    const debtorsList = contributorsData
+      .filter(c => c.balance < 0)
+      .map(c => ({ 
+        name: c.name, 
+        balance: Math.abs(c.balance)
+      }));
+    
+    const creditorsList = contributorsData
+      .filter(c => c.balance > 0)
+      .map(c => ({ 
+        name: c.name, 
+        balance: c.balance
+      }));
+    
+    // Settle between debtors and creditors
+    while (debtorsList.length > 0 && creditorsList.length > 0) {
+      const debtor = debtorsList[0];
+      const creditor = creditorsList[0];
+      
+      const transfer = Math.min(debtor.balance, creditor.balance);
+      
+      if (transfer > 0) {
+        // Update original contributorsData
+        const debtorData = contributorsData.find(c => c.name === debtor.name);
+        const creditorData = contributorsData.find(c => c.name === creditor.name);
+        
+        debtorData.settlements.pay.push({
+          to: creditor.name,
+          amount: transfer
+        });
+        
+        creditorData.settlements.receive.push({
+          from: debtor.name,
+          amount: transfer
+        });
+      }
+      
+      debtor.balance -= transfer;
+      creditor.balance -= transfer;
+      
+      if (debtor.balance <= 0) debtorsList.shift();
+      if (creditor.balance <= 0) creditorsList.shift();
+    }
+  }
+  
+  console.log("Contributors Data:", contributorsData);
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let current = '';
+  let insideQuotes = false;
+
+  for (let char of line) {
+    if (char === '"') {
+      insideQuotes = !insideQuotes;
+    } else if (char === ',' && !insideQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+
+  return result.map(c => c.trim());
+}
+
+function parseCSV(text, type) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const headers = splitCSVLine(lines[0]);
+
+  return lines.slice(1).map(line => {
+    const cols = splitCSVLine(line);
+
+    const row = {};
+    headers.forEach((h, i) => row[h.trim()] = cols[i]);
+
+    if (type === 'expense') {
+      return {
+        date: row["DATE"] || row["Timestamp"],
+        amount: parseFloat(row["धन राशि (Amount)"]) || 0,
+        category: "अन्य",
+        paid_by: row["द्वारा भुगतान किया गया (Paid By)"] || "",
+        reason: row["कारण  (Reason Of Expense)"] || "",
+        proof: row["Proof (if any)"] || ""
+      };
+    } else {
+      return {
+        date: row["DATE"] || row["Timestamp"],
+        amount: parseFloat(row["धन राशि  (Amount)"]) || 0,
+        invested_by: row["द्वारा निवेश किया गया  (Paid By)"] || "",
+        notes: row["Any comments"] || "",
+        proof: row["Proof (if any)"] || "",
+        given_to: row["को दिया गया  (Given To)"] || ""
+      };
+    }
+  }).filter(r => r.amount > 0);
+}
+
+function renderAll() {
+  renderSummary();
+  calculateSettlements();
+  renderBrothers();
+  renderCharts();
+  renderExpenseTable();
+  renderInvestmentTable();
+  renderAdminTables();
+}
+
+// ---- SUMMARY ----
+function renderSummary() {
+  const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+  const totalInv = investments.reduce((s, i) => s + i.amount, 0);
+  const totalReq = requiredFunds.reduce((s, r) => s + r.amount, 0);
+  
+  const sharePerPerson = totalReq > 0 ? totalReq / CONFIG.SPLIT_WAYS : 0;
+  const usedAmount = totalExp / CONFIG.SPLIT_WAYS;
+  const actualRequired = totalReq - totalInv;
+  const balanceLalbihari = totalInv - totalExp;
+  
+  globalMetrics = {
+    totalExpense: totalExp,
+    totalContributed: totalInv,
+    totalRequired: totalReq,
+    sharePerPerson: sharePerPerson,
+    usedAmount: usedAmount,
+    actualRequired: actualRequired,
+    balanceLalbihari: balanceLalbihari
+  };
+  
+  console.log("Metrics:", {
+    totalRequired: totalReq,
+    sharePerPerson: sharePerPerson,
+    actualRequired: actualRequired,
+    balanceLalbihari: balanceLalbihari
+  });
+  
+  document.getElementById('totalExpense').textContent = fmt(totalExp);
+  document.getElementById('totalInvestment').textContent = fmt(totalInv);
+  document.getElementById('perPersonShare').textContent = fmt(sharePerPerson);
+  document.getElementById('expenseCount').textContent = expenses.length;
+  document.getElementById('expenseTotal2').textContent = `कुल: ${fmt(totalExp)}`;
+  document.getElementById('investmentTotal2').textContent = `कुल: ${fmt(totalInv)}`;
+}
+
+// ---- BROTHERS ----
+function renderBrothers() {
+  const { sharePerPerson } = globalMetrics;
+  const grid = document.getElementById('brothersGrid');
+  grid.innerHTML = '';
+  CONFIG.BROTHERS.forEach((name, i) => {
+    const paid = expenses.filter(e => e.name_match(e.paid_by, name)).reduce((s, e) => s + e.amount, 0);
+    const contributed = investments.filter(inv => inv.name_match(inv.invested_by, name)).reduce((s, inv) => s + inv.amount, 0);
+    const remaining = sharePerPerson - contributed;
+    const isPos = remaining <= 0;
+    grid.innerHTML += `
+      <div class="bcard">
+        <div class="name">
+          <div class="avatar" style="background:${CONFIG.BROTHER_COLORS[i]}">${CONFIG.BROTHER_INITIALS[i]}</div>
+          ${name}
+        </div>
+        <div class="row"><span class="lbl">खर्च दिया</span><span class="val">${fmt(paid)}</span></div>
+        <div class="row"><span class="lbl">योगदान</span><span class="val">${fmt(contributed)}</span></div>
+        <div class="row"><span class="lbl">बनता है</span><span class="val">${fmt(sharePerPerson)}</span></div>
+        <div class="settle-status ${isPos ? 'gets' : remaining === 0 ? 'settled' : 'owes'}">
+          ${isPos ? `✓ ${fmt(Math.abs(remaining))} पूर्ण` : remaining === 0 ? '✓ बराबर' : `↓ ${fmt(remaining)} और दें`}
+        </div>
+      </div>`;
+  });
+}
+
+Object.defineProperty(Object.prototype, 'name_match', {
+  value: function(a, b) {
+    if (!a || !b) return false;
+    return a.toLowerCase().trim() === b.toLowerCase().trim();
+  },
+  writable: true,
+  configurable: true
+});
+
+// ---- CHARTS ----
+function renderCharts() {
+  ['investmentPie','expensePie'].forEach(id => {
+    if (pieCharts[id]) { pieCharts[id].destroy(); }
+  });
+
+  const invByBro = CONFIG.BROTHERS.map((name, i) =>
+    investments.filter(inv => inv.name_match(inv.invested_by, name)).reduce((s, inv) => s + inv.amount, 0)
+  );
+  const expByBro = CONFIG.BROTHERS.map((name, i) =>
+    expenses.filter(e => e.name_match(e.paid_by, name)).reduce((s, e) => s + e.amount, 0)
+  );
+
+  const chartDefaults = {
+    type: 'doughnut',
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#8a8799', font: { size: 12 }, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}` } }
+      },
+      cutout: '65%'
+    }
+  };
+
+  pieCharts['investmentPie'] = new Chart(document.getElementById('investmentPie'), {
+    ...chartDefaults,
+    data: { labels: CONFIG.BROTHERS.map(n => n.split('-')[0].trim()), datasets: [{ data: invByBro, backgroundColor: CONFIG.BROTHER_COLORS, borderWidth: 0, hoverOffset: 8 }] }
+  });
+  pieCharts['expensePie'] = new Chart(document.getElementById('expensePie'), {
+    ...chartDefaults,
+    data: { labels: CONFIG.BROTHERS.map(n => n.split('-')[0].trim()), datasets: [{ data: expByBro, backgroundColor: CONFIG.BROTHER_COLORS, borderWidth: 0, hoverOffset: 8 }] }
+  });
+}
+
+// ---- EXPENSE TABLE ----
+function populateFilterDropdown() {
+  const sel = document.getElementById('filterPerson');
+  CONFIG.BROTHERS.forEach(name => {
+    sel.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+}
+
+function renderExpenseTable() {
+  const filter = document.getElementById('filterPerson').value;
+  const filtered = filter ? expenses.filter(e => e.name_match(e.paid_by, filter)) : expenses;
+  const tbody = document.getElementById('expenseTableBody');
+  tbody.innerHTML = '';
+  document.getElementById('expenseEmpty').style.display = filtered.length ? 'none' : 'block';
+  [...filtered].sort((a,b) => b.date.localeCompare(a.date)).forEach((e, i) => {
+    const categoryColors = { 'निर्माण सामग्री': '#e05c2a', 'यातायात': '#3498db', 'मजदूरी': '#f0a500', 'उपकरण': '#9b59b6', 'अन्य': '#8a8799' };
+    const cat = e.category || 'अन्य';
+    tbody.innerHTML += `<tr>
+      <td>${formatDate(e.date)}</td>
+      <td><strong class="amount-neg">${fmt(e.amount)}</strong></td>
+      <td><span class="badge" style="background:${(categoryColors[cat]||'#8a8799')}22;color:${categoryColors[cat]||'#8a8799'}">${cat}</span></td>
+      <td>${e.paid_by}</td>
+      <td>${e.reason}</td>
+      <td>${e.proof ? `<a href="${e.proof}" class="proof-link" target="_blank">📎 देखें</a>` : '<span style="color:var(--muted);font-size:12px">-</span>'}</td>
+      ${isAdmin ? `<td><button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="editItem('expense',${i})">✏️</button></td>` : ''}
+    </tr>`;
+  });
+}
+
+// ---- INVESTMENT TABLE ----
+function renderInvestmentTable() {
+  const tbody = document.getElementById('investmentTableBody');
+  tbody.innerHTML = '';
+  document.getElementById('investmentEmpty').style.display = investments.length ? 'none' : 'block';
+  [...investments].sort((a,b) => b.date.localeCompare(a.date)).forEach((inv, i) => {
+    const bIdx = CONFIG.BROTHERS.findIndex(name => inv.name_match(inv.invested_by, name));
+    const color = CONFIG.BROTHER_COLORS[bIdx] || '#8a8799';
+    tbody.innerHTML += `<tr>
+      <td>${formatDate(inv.date)}</td>
+      <td><strong class="amount-pos">${fmt(inv.amount)}</strong></td>
+      <td><span style="color:${color};font-weight:600">${inv.invested_by}</span></td>
+      <td>${inv.notes}</td>
+      <td>${inv.proof ? `<a href="${inv.proof}" class="proof-link" target="_blank">📎 देखें</a>` : '<span style="color:var(--muted);font-size:12px">-</span>'}</td>
+      ${isAdmin ? `<td><button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="editItem('investment',${i})">✏️</button></td>` : ''}
+    </tr>`;
+  });
+}
+
+// ---- ADMIN TABLES ----
+function renderAdminTables() {
+  if (!isAdmin) return;
+  const ae = document.getElementById('adminExpenseList');
+  const ai = document.getElementById('adminInvestList');
+  ae.innerHTML = '';
+  ai.innerHTML = '';
+  expenses.slice(0,10).forEach((e, i) => {
+    ae.innerHTML += `<tr><td>${formatDate(e.date)}</td><td>${fmt(e.amount)}</td><td>${e.paid_by.split('-')[1]?.trim()||e.paid_by}</td><td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('expense',${i})">✏️ Edit</button></td></tr>`;
+  });
+  investments.slice(0,10).forEach((inv, i) => {
+    ai.innerHTML += `<tr><td>${formatDate(inv.date)}</td><td>${fmt(inv.amount)}</td><td>${inv.invested_by.split('-')[1]?.trim()||inv.invested_by}</td><td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('investment',${i})">✏️ Edit</button></td></tr>`;
+  });
+}
+
+// ---- SETTLEMENT ----
+function showSettlement() {
+  const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+  const perPerson = totalExp / CONFIG.SPLIT_WAYS;
+  let html = `<div style="margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:10px;font-size:14px;">
+    कुल खर्च: <strong>${fmt(totalExp)}</strong> &nbsp;|&nbsp; प्रति व्यक्ति: <strong>${fmt(perPerson)}</strong>
+  </div>`;
+  const balances = CONFIG.BROTHERS.map((name, i) => {
+    const paid = expenses.filter(e => e.name_match(e.paid_by, name)).reduce((s, e) => s + e.amount, 0);
+    return { name, paid, balance: paid - perPerson, color: CONFIG.BROTHER_COLORS[i] };
+  });
+  html += '<div style="display:flex;flex-direction:column;gap:12px;">';
+  balances.forEach(b => {
+    html += `<div class="settle-item">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${b.color}"></div>
+        <span style="font-family:'Tiro Devanagari Hindi',serif">${b.name}</span>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--muted)">दिया: ${fmt(b.paid)}</div>
+        <div style="${b.balance >= 0 ? 'color:var(--green)' : 'color:var(--red)'}; font-weight:600">
+          ${b.balance >= 0 ? `↑ ${fmt(b.balance)} वापस मिलेगा` : `↓ ${fmt(Math.abs(b.balance))} देना है`}
+        </div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  const debtors = balances.filter(b => b.balance < 0);
+  const creditors = balances.filter(b => b.balance > 0);
+  if (debtors.length && creditors.length) {
+    html += `<div style="margin-top:16px;padding:14px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:10px;">
+      <div style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:8px;font-family:'Tiro Devanagari Hindi',serif">💸 भुगतान करना है:</div>`;
+    debtors.forEach(d => {
+      creditors.forEach(c => {
+        html += `<div style="font-size:13px;color:var(--text);padding:4px 0;font-family:'Tiro Devanagari Hindi',serif">
+          → <strong>${d.name.split('-')[1]?.trim()||d.name}</strong> को <strong>${c.name.split('-')[1]?.trim()||c.name}</strong> को <strong style="color:var(--accent)">${fmt(Math.min(Math.abs(d.balance), c.balance))}</strong> देना है
+        </div>`;
+      });
+    });
+    html += '</div>';
+  }
+  document.getElementById('settleContent').innerHTML = html;
+  document.getElementById('settleModal').classList.add('show');
+}
+
+function markSettled() {
+  alert('✅ सेटलमेंट नोट किया गया!\n\nकृपया Google Sheet में एक नई entry करें कि आज का हिसाब पूरा हो गया।');
+  closeModal('settleModal');
+}
+
+// ---- FORMS ----
+function openForm(type) {
+  const url = type === 'expense' ? CONFIG.EXPENSE_FORM_URL : CONFIG.INVESTMENT_FORM_URL;
+  if (url.startsWith('YOUR_')) {
+    alert(`Google Form URL अभी सेट नहीं है!\n\nHTML फ़ाइल में CONFIG.${type === 'expense' ? 'EXPENSE' : 'INVESTMENT'}_FORM_URL में अपना Form URL डालें।`);
+    return;
+  }
+  window.open(url, '_blank');
+}
+
+// ---- ADMIN ----
+function showAdminLogin() {
+  if (isAdmin) { switchTab('admin'); return; }
+  document.getElementById('adminModal').classList.add('show');
+  setTimeout(() => document.getElementById('adminPass').focus(), 100);
+}
+
+function doLogin() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === CONFIG.ADMIN_PASSWORD) {
+    isAdmin = true;
+    document.getElementById('adminModal').classList.remove('show');
+    document.getElementById('adminTab').style.display = 'flex';
+    document.getElementById('adminHeaderBtn').textContent = '⚙️ Admin';
+    document.getElementById('adminHeaderBtn').className = 'admin-badge';
+    document.getElementById('adminExpenseCol').style.display = '';
+    document.getElementById('adminInvestCol').style.display = '';
+    renderAll();
+    switchTab('admin');
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  isAdmin = false;
+  document.getElementById('adminTab').style.display = 'none';
+  document.getElementById('adminHeaderBtn').textContent = '🔐 Admin';
+  document.getElementById('adminHeaderBtn').className = 'admin-btn';
+  document.getElementById('adminExpenseCol').style.display = 'none';
+  document.getElementById('adminInvestCol').style.display = 'none';
+  renderAll();
+  switchTab('dashboard');
+}
+
+// ---- EDIT ----
+function editItem(type, index) {
+  editingItem = { type, index };
+  const item = type === 'expense' ? expenses[index] : investments[index];
+  const title = type === 'expense' ? 'खर्च संपादित करें' : 'योगदान संपादित करें';
+  document.getElementById('editModalTitle').textContent = title;
+  let html = '<div class="form-grid">';
+  if (type === 'expense') {
+    html += field('दिनांक', 'edit_date', 'date', item.date);
+    html += field('राशि (₹)', 'edit_amount', 'number', item.amount);
+    html += fieldSelect('किसने दिया', 'edit_person', CONFIG.BROTHERS, item.paid_by);
+    html += field('श्रेणी', 'edit_category', 'text', item.category);
+    html += `<div class="field" style="grid-column:1/-1"><label>कारण</label><input type="text" id="edit_reason" value="${item.reason}"></div>`;
+    html += `<div class="field" style="grid-column:1/-1"><label>प्रमाण URL</label><input type="url" id="edit_proof" value="${item.proof}"></div>`;
+  } else {
+    html += field('दिनांक', 'edit_date', 'date', item.date);
+    html += field('राशि (₹)', 'edit_amount', 'number', item.amount);
+    html += fieldSelect('किसने किया', 'edit_person', CONFIG.BROTHERS, item.invested_by);
+    html += `<div class="field" style="grid-column:1/-1"><label>विवरण</label><input type="text" id="edit_notes" value="${item.notes}"></div>`;
+    html += `<div class="field" style="grid-column:1/-1"><label>प्रमाण URL</label><input type="url" id="edit_proof" value="${item.proof}"></div>`;
+  }
+  html += '</div>';
+  html += `<div style="margin-top:16px;padding:12px;background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:8px;font-size:12px;color:var(--muted)">
+    ⚠️ यह बदलाव सिर्फ इस session में दिखेगा। स्थायी बदलाव के लिए Google Sheet में directly edit करें।</div>`;
+  document.getElementById('editFormContent').innerHTML = html;
+  document.getElementById('editModal').classList.add('show');
+}
+
+function saveEdit() {
+  const { type, index } = editingItem;
+  const item = type === 'expense' ? expenses[index] : investments[index];
+  item.date = document.getElementById('edit_date').value;
+  item.amount = parseFloat(document.getElementById('edit_amount').value) || 0;
+  item.proof = document.getElementById('edit_proof').value;
+  if (type === 'expense') {
+    item.paid_by = document.getElementById('edit_person').value;
+    item.category = document.getElementById('edit_category').value;
+    item.reason = document.getElementById('edit_reason').value;
+  } else {
+    item.invested_by = document.getElementById('edit_person').value;
+    item.notes = document.getElementById('edit_notes').value;
+  }
+  closeModal('editModal');
+  renderAll();
+}
+
+function field(label, id, type, value) {
+  return `<div class="field"><label>${label}</label><input type="${type}" id="${id}" value="${value}"></div>`;
+}
+function fieldSelect(label, id, options, selected) {
+  return `<div class="field"><label>${label}</label><select id="${id}">${options.map(o => `<option ${o===selected?'selected':''}>${o}</option>`).join('')}</select></div>`;
+}
+
+// ---- TAB SWITCHING ----
+function switchTab(tab) {
+  currentTab = tab;
+  ['dashboard','expenses','investments','admin'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['dashboard','expenses','investments','admin'][i] === tab);
+  });
+}
+
+// ---- UTILS ----
+function fmt(n) { return '₹' + Math.round(n).toLocaleString('hi-IN'); }
+function formatDate(d) {
+  if (!d) return '-';
+  try { return new Date(d).toLocaleDateString('hi-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  catch { return d; }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+</script>
+</body>
+</html>
