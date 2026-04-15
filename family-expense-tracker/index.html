@@ -242,14 +242,19 @@ const SAMPLE_INVESTMENTS = [];
       <div class="sub">सभी योगदानों का योग</div>
     </div>
     <div class="scard" style="--accent-clr: var(--purple)">
-      <div class="label">कुल आवश्यक राशि</div>
+      <div class="label">अभी खर्च होना बाकी</div>
       <div class="amount" id="remainingRequired">₹0</div>
-      <div class="sub">बाकी आवश्यक राशि</div>
+      <div class="sub">खर्च की कमी</div>
     </div>
     <div class="scard" style="--accent-clr: var(--green)">
       <div class="label">फंड उपलब्ध</div>
       <div class="amount" id="availableFund">₹0</div>
       <div class="sub">बचा हुआ पैसा</div>
+    </div>
+    <div class="scard" style="--accent-clr: var(--blue)">
+      <div class="label">अतिरिक्त संग्रह</div>
+      <div class="amount" id="extraCollection">₹0</div>
+      <div class="sub">जमा अतिरिक्त राशि</div>
     </div>
   </div>
 
@@ -681,6 +686,7 @@ function renderSummary() {
   document.getElementById('investmentTotalCard').textContent = fmt(totalInv);
   document.getElementById('remainingRequired').textContent = fmt(Math.max(0, totalReq - totalExp));
   document.getElementById('availableFund').textContent = fmt(Math.max(0, totalInv - totalExp));
+  document.getElementById('extraCollection').textContent = fmt(Math.max(0, totalInv - totalReq));
 }
 
 // ---- BROTHERS ----
