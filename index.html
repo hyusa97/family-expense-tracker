@@ -187,6 +187,7 @@ const CONFIG = {
 
   EXPENSE_FORM_URL: "...",
   INVESTMENT_FORM_URL: "...",
+  REQUIRED_FUND_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLScymWr-9m8J-cgM0bsNhXkYp5Ga7Y2lo3zWHDcTJUJWwZWkoQ/viewform?usp=header",
 
   BROTHERS: ["Ajay Kumar", "Ranjay Kumar", "Pawan Kumar", "Rishi Kumar"],
   BROTHER_COLORS: ["#f0a500", "#e05c2a", "#3498db", "#9b59b6"],
@@ -341,15 +342,10 @@ const SAMPLE_INVESTMENTS = [];
     <div class="actions">
       <button class="btn btn-primary" onclick="openForm('expense')">+ खर्च जोड़ें</button>
       <button class="btn btn-secondary" onclick="openForm('investment')">+ योगदान जोड़ें</button>
+      <button class="btn btn-secondary" onclick="window.open(CONFIG.REQUIRED_FUND_FORM_URL, '_blank')">+ आवश्यक फंड जोड़ें</button>
     </div>
   </div>
 
-  <div class="config-banner">
-    <strong>Config URLs</strong><br><br>
-    खर्च Form URL: <code id="showExpenseForm"></code><br>
-    निवेश Form URL: <code id="showInvestForm"></code><br>
-    खर्च CSV URL: <code id="showExpenseCSV"></code><br>
-  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
     <div class="table-card" style="overflow:hidden;">
       <div class="table-header"><div class="table-title">हाल के खर्च (Admin)</div></div>
