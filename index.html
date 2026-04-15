@@ -180,13 +180,17 @@
      ============================================================ -->
 <script>
 const CONFIG = {
-  EXPENSE_CSV_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=खर्च",
-  INVESTMENT_CSV_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=निवेश",
-  REQUIRED_FUND_URL: "https://sheetdb.io/api/v1/av7bhoe7xrjem?sheet=Required_Fund",
+  SHEET_ID: "1nUBIn2EqGUWu2rFPr2ocnX2a1cxAzXooGbBhw-IayY8",
+  API_KEY: "AIzaSyAE3J1oBRbdKuf5bnmBiTkVsss5kpQin8g",
+  
+  EXPENSE_URL: "https://sheets.googleapis.com/v4/spreadsheets/1nUBIn2EqGUWu2rFPr2ocnX2a1cxAzXooGbBhw-IayY8/values/खर्च?key=AIzaSyAE3J1oBRbdKuf5bnmBiTkVsss5kpQin8g",
+  INVESTMENT_URL: "https://sheets.googleapis.com/v4/spreadsheets/1nUBIn2EqGUWu2rFPr2ocnX2a1cxAzXooGbBhw-IayY8/values/निवेश?key=AIzaSyAE3J1oBRbdKuf5bnmBiTkVsss5kpQin8g",
+  REQUIRED_FUND_URL: "https://sheets.googleapis.com/v4/spreadsheets/1nUBIn2EqGUWu2rFPr2ocnX2a1cxAzXooGbBhw-IayY8/values/Required_Fund?key=AIzaSyAE3J1oBRbdKuf5bnmBiTkVsss5kpQin8g",
+  
   ADMIN_PASSWORD: "hisaab123",
 
-  EXPENSE_FORM_URL: "...",
-  INVESTMENT_FORM_URL: "...",
+  EXPENSE_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSepUcLniBeLHvxmr_Fj72l0yrcAA09iq_VPqwaJxUV9brQk0A/viewform?usp=publish-editor",
+  INVESTMENT_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLSeRX27eeZ1nCMrnUbEdBkd9cTWbw3HOxk6-d6dWJtAh9HviKg/viewform?usp=publish-editor",
   REQUIRED_FUND_FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLScymWr-9m8J-cgM0bsNhXkYp5Ga7Y2lo3zWHDcTJUJWwZWkoQ/viewform?usp=header",
 
   BROTHERS: ["Ajay Kumar", "Ranjay Kumar", "Pawan Kumar", "Rishi Kumar"],
@@ -430,28 +434,32 @@ window.onload = () => {
 };
 
 function checkConfig() {
-  const unconfigured = CONFIG.EXPENSE_CSV_URL === "YOUR_EXPENSE_SHEET_CSV_URL";
+  const unconfigured = CONFIG.API_KEY === "YOUR_API_KEY";
   document.getElementById('configBanner').style.display = unconfigured ? 'block' : 'none';
   document.getElementById('showExpenseForm').textContent = CONFIG.EXPENSE_FORM_URL;
   document.getElementById('showInvestForm').textContent = CONFIG.INVESTMENT_FORM_URL;
-  document.getElementById('showExpenseCSV').textContent = CONFIG.EXPENSE_CSV_URL;
+  document.getElementById('showExpenseCSV').textContent = CONFIG.EXPENSE_URL;
 }
 
 async function loadData() {
   try {
-    const [expRes, invRes, reqRes] = await Promise.all([
-      fetch(CONFIG.EXPENSE_CSV_URL),
-      fetch(CONFIG.INVESTMENT_CSV_URL),
+    const [expRes, invRes, fundRes] = await Promise.all([
+      fetch(CONFIG.EXPENSE_URL),
+      fetch(CONFIG.INVESTMENT_URL),
       fetch(CONFIG.REQUIRED_FUND_URL).catch(e => ({ ok: false }))
     ]);
 
-    const expData = await expRes.json();
-    const invData = await invRes.json();
-    const reqData = reqRes.ok ? await reqRes.json() : [];
+    const expJson = await expRes.json();
+    const invJson = await invRes.json();
+    const fundJson = fundRes.ok ? await fundRes.json() : { values: [] };
+
+    const expData = parseGoogleSheet(expJson);
+    const invData = parseGoogleSheet(invJson);
+    const fundData = parseGoogleSheet(fundJson);
 
     expenses = parseSheetDB(expData, "expense");
     investments = parseSheetDB(invData, "investment");
-    requiredFunds = parseRequiredFund(reqData);
+    requiredFunds = parseRequiredFund(fundData);
 
     console.log("Required Funds:", requiredFunds);
     const totalRequiredFund = requiredFunds.reduce((s, r) => s + r.amount, 0);
@@ -462,6 +470,20 @@ async function loadData() {
   }
 
   renderAll();
+}
+
+function parseGoogleSheet(data) {
+  if (!data.values || data.values.length < 2) return [];
+  
+  const [headers, ...rows] = data.values;
+  
+  return rows.map(row => {
+    let obj = {};
+    headers.forEach((h, i) => {
+      obj[h.trim()] = row[i];
+    });
+    return obj;
+  });
 }
 
 function parseSheetDB(data, type) {
